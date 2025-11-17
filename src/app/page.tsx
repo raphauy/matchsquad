@@ -9,6 +9,12 @@ export default function Home() {
   const user = useQuery(api.users.getCurrentUser);
   const ensureRole = useMutation(api.users.ensureUserRole);
   const router = useRouter();
+  
+  // Obtener organizaciones del usuario si es organizador
+  const userOrgs = useQuery(
+    api.invitations.getUserOrganizaciones,
+    user && user.role === "organizador" ? { userId: user._id } : "skip"
+  );
 
   useEffect(() => {
     // Si user es null, significa que no está autenticado
@@ -23,12 +29,28 @@ export default function Home() {
         ensureRole().then(() => {
           router.push("/jugador");
         });
+      } else if (user.role === "organizador") {
+        // Si es organizador, redirigir a su primera organización
+        if (userOrgs !== undefined) {
+          if (userOrgs && userOrgs.length > 0) {
+            const firstOrg = userOrgs[0];
+            if (firstOrg && firstOrg.slug) {
+              router.push(`/org/${firstOrg.slug}/admin`);
+            } else {
+              router.push("/jugador");
+            }
+          } else {
+            // No tiene organizaciones asignadas
+            router.push("/jugador");
+          }
+        }
+        // Si userOrgs es undefined, esperar a que cargue
       } else {
-        // Redirigir automáticamente según el rol
+        // Redirigir automáticamente según el rol (superadmin o jugador)
         router.push(`/${user.role}`);
       }
     }
-  }, [user, router, ensureRole]);
+  }, [user, userOrgs, router, ensureRole]);
 
   if (user === undefined) {
     return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Trophy, Settings } from "lucide-react";
+import { LayoutDashboard, Trophy, Settings, Users } from "lucide-react";
 import Image from "next/image";
 import {
   Sidebar,
@@ -40,6 +40,11 @@ export function OrganizadorSidebar({
       title: "Dashboard",
       href: `/org/${slug}/admin`,
       icon: LayoutDashboard,
+    },
+    {
+      title: "Usuarios",
+      href: `/org/${slug}/admin/usuarios`,
+      icon: Users,
     },
     {
       title: "Torneos",

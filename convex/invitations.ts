@@ -146,7 +146,7 @@ export const getOrganizacionUsuarios = query({
       type: "invitacion" as const,
       invitationId: inv._id,
       email: inv.email,
-      name: null as string | null,
+      name: inv.name || null,
       image: null as string | null,
       role: null as string | null,
       addedAt: inv.expiresAt, // Usar expiresAt para ordenar
@@ -239,6 +239,7 @@ export const getOrganizacionStats = query({
 export const createInvitation = mutation({
   args: {
     email: v.string(),
+    name: v.optional(v.string()),
     organizacionId: v.id("organizadores"),
   },
   handler: async (ctx, args) => {
@@ -247,8 +248,25 @@ export const createInvitation = mutation({
     if (!userId) throw new Error("No autenticado");
 
     const user = await ctx.db.get(userId);
-    if (!user || user.role !== "superadmin") {
-      throw new Error("Solo SuperAdmins pueden enviar invitaciones");
+    if (!user) throw new Error("Usuario no encontrado");
+
+    // Validar permisos: SuperAdmin o Organizador asociado a la organización
+    if (user.role === "superadmin") {
+      // SuperAdmin puede invitar a cualquier organización
+    } else if (user.role === "organizador") {
+      // Organizador solo puede invitar a organizaciones donde está asociado
+      const assoc = await ctx.db
+        .query("userOrganizaciones")
+        .withIndex("by_user_organizacion", (q) =>
+          q.eq("userId", userId).eq("organizacionId", args.organizacionId)
+        )
+        .first();
+
+      if (!assoc) {
+        throw new Error("No tienes permisos para invitar usuarios a esta organización");
+      }
+    } else {
+      throw new Error("No tienes permisos para enviar invitaciones");
     }
 
     // 2. Validar email
@@ -307,6 +325,7 @@ export const createInvitation = mutation({
 
     const invitationId = await ctx.db.insert("invitations", {
       email: args.email,
+      name: args.name,
       organizacionId: args.organizacionId,
       token,
       expiresAt,
@@ -328,9 +347,7 @@ export const cancelInvitation = mutation({
     if (!userId) throw new Error("No autenticado");
 
     const user = await ctx.db.get(userId);
-    if (!user || user.role !== "superadmin") {
-      throw new Error("Solo SuperAdmins pueden cancelar invitaciones");
-    }
+    if (!user) throw new Error("Usuario no encontrado");
 
     const invitation = await ctx.db.get(args.invitationId);
     if (!invitation) {
@@ -339,6 +356,25 @@ export const cancelInvitation = mutation({
 
     if (invitation.status !== "pending") {
       throw new Error("Solo se pueden cancelar invitaciones pendientes");
+    }
+
+    // Validar permisos: SuperAdmin o Organizador asociado a la organización
+    if (user.role === "superadmin") {
+      // SuperAdmin puede cancelar cualquier invitación
+    } else if (user.role === "organizador") {
+      // Organizador solo puede cancelar invitaciones de sus orgs
+      const assoc = await ctx.db
+        .query("userOrganizaciones")
+        .withIndex("by_user_organizacion", (q) =>
+          q.eq("userId", userId).eq("organizacionId", invitation.organizacionId)
+        )
+        .first();
+
+      if (!assoc) {
+        throw new Error("No tienes permisos para cancelar esta invitación");
+      }
+    } else {
+      throw new Error("No tienes permisos para cancelar invitaciones");
     }
 
     await ctx.db.patch(args.invitationId, { status: "cancelled" });
@@ -388,10 +424,21 @@ export const acceptInvitation = mutation({
       throw new Error("Esta invitación fue enviada a otro email");
     }
 
-    // 5. Actualizar rol: si es jugador o no tiene rol, asignar organizador
+    // 5. Actualizar rol y nombre: si es jugador o no tiene rol, asignar organizador
+    // Si el usuario no tiene nombre y la invitación sí, asignar el nombre de la invitación
+    const updates: { role?: "organizador"; name?: string } = {};
+
     if (!user.role || user.role === "jugador") {
-      await ctx.db.patch(userId, { role: "organizador" });
-      console.log("Rol actualizado a organizador para usuario:", userId);
+      updates.role = "organizador";
+    }
+
+    if (!user.name && invitation.name) {
+      updates.name = invitation.name;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(userId, updates);
+      console.log("Usuario actualizado:", { userId, updates });
     }
 
     // 6. Crear asociación usuario-organización (si no existe)
@@ -466,8 +513,25 @@ export const removeUserFromOrganizacion = mutation({
     if (!currentUserId) throw new Error("No autenticado");
 
     const currentUser = await ctx.db.get(currentUserId);
-    if (!currentUser || currentUser.role !== "superadmin") {
-      throw new Error("Solo SuperAdmins pueden eliminar asociaciones");
+    if (!currentUser) throw new Error("Usuario no encontrado");
+
+    // Validar permisos: SuperAdmin o Organizador asociado a la organización
+    if (currentUser.role === "superadmin") {
+      // SuperAdmin puede eliminar de cualquier organización
+    } else if (currentUser.role === "organizador") {
+      // Organizador solo puede eliminar de sus propias orgs
+      const assoc = await ctx.db
+        .query("userOrganizaciones")
+        .withIndex("by_user_organizacion", (q) =>
+          q.eq("userId", currentUserId).eq("organizacionId", args.organizacionId)
+        )
+        .first();
+
+      if (!assoc) {
+        throw new Error("No tienes permisos para gestionar usuarios de esta organización");
+      }
+    } else {
+      throw new Error("No tienes permisos para eliminar asociaciones");
     }
 
     const association = await ctx.db
@@ -533,8 +597,10 @@ export const sendInvitationEmail = action({
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #333; margin-bottom: 20px;">Has sido invitado a MatchSquad</h2>
 
+          ${invitation.name ? `<p style="font-size: 16px; color: #666; line-height: 1.6;">Hola <strong>${invitation.name}</strong>,</p>` : ''}
+
           <p style="font-size: 16px; color: #666; line-height: 1.6;">
-            Has sido invitado a unirte a <strong>${invitation.organizacionNombre}</strong>
+            <strong>${invitation.invitedByName}</strong> te ha invitado a unirte a <strong>${invitation.organizacionNombre}</strong>
             como organizador en MatchSquad.
           </p>
 
@@ -569,7 +635,7 @@ export const sendInvitationEmail = action({
         </div>
       `,
       text: `
-Has sido invitado a ${invitation.organizacionNombre} en MatchSquad.
+${invitation.invitedByName} te ha invitado a ${invitation.organizacionNombre} en MatchSquad.
 
 Acepta la invitación aquí: ${invitationLink}
 
@@ -638,8 +704,10 @@ export const resendInvitationEmail = action({
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #333; margin-bottom: 20px;">Has sido invitado a MatchSquad</h2>
 
+          ${invitation.name ? `<p style="font-size: 16px; color: #666; line-height: 1.6;">Hola <strong>${invitation.name}</strong>,</p>` : ''}
+
           <p style="font-size: 16px; color: #666; line-height: 1.6;">
-            Has sido invitado a unirte a <strong>${invitation.organizacionNombre}</strong>
+            <strong>${invitation.invitedByName}</strong> te ha invitado a unirte a <strong>${invitation.organizacionNombre}</strong>
             como organizador en MatchSquad.
           </p>
 
@@ -674,7 +742,7 @@ export const resendInvitationEmail = action({
         </div>
       `,
       text: `
-Has sido invitado a ${invitation.organizacionNombre} en MatchSquad.
+${invitation.invitedByName} te ha invitado a ${invitation.organizacionNombre} en MatchSquad.
 
 Acepta la invitación aquí: ${invitationLink}
 

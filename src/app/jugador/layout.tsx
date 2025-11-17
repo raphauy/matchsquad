@@ -75,12 +75,14 @@ export default function JugadorLayout({
     return null;
   }
 
+  const displayName = user?.name || user?.email || "Usuario";
   const userInitials = user?.name
     ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
+        .slice(0, 2)
     : user?.email?.[0].toUpperCase() || "U";
 
   return (
@@ -131,7 +133,7 @@ export default function JugadorLayout({
               <div>
                 <h1 className="text-2xl font-bold">Panel Jugador</h1>
                 <p className="text-sm text-muted-foreground">
-                  Bienvenido, {user?.name || user?.email}
+                  Bienvenido, {displayName}
                 </p>
               </div>
 
@@ -144,7 +146,7 @@ export default function JugadorLayout({
                         {user?.image && (
                           <AvatarImage
                             src={user.image}
-                            alt={user.name || user.email || "Usuario"}
+                            alt={displayName}
                             className="object-cover"
                           />
                         )}
@@ -157,10 +159,10 @@ export default function JugadorLayout({
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">
-                          {user?.name || "Jugador"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
+                        {user?.name && (
+                          <p className="text-sm font-medium">{user.name}</p>
+                        )}
+                        <p className={user?.name ? "text-xs text-muted-foreground" : "text-sm font-medium"}>
                           {user?.email}
                         </p>
                       </div>

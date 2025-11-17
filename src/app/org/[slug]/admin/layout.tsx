@@ -40,6 +40,12 @@ export default function OrganizadorAdminLayout({
     slug,
   });
 
+  // Obtener organizaciones del usuario si es organizador
+  const userOrgs = useQuery(
+    api.invitations.getUserOrganizaciones,
+    user && user.role === "organizador" ? { userId: user._id } : "skip"
+  );
+
   // STEP 1: Validar autenticación y permisos
   useEffect(() => {
     if (
@@ -47,8 +53,42 @@ export default function OrganizadorAdminLayout({
       (!user || (user.role !== "organizador" && user.role !== "superadmin"))
     ) {
       router.push("/signin");
+      return;
     }
-  }, [user, router]);
+
+    // STEP 1.5: Validar acceso a organización específica (solo para organizadores, no superadmin)
+    // Solo validar cuando TODOS los datos están cargados y el usuario es organizador
+    // IMPORTANTE: No redirigir si userOrgs está cargando (undefined) o si es superadmin
+    if (
+      user &&
+      user.role === "organizador" &&
+      organizador !== undefined &&
+      organizador !== null &&
+      userOrgs !== undefined && // userOrgs debe estar cargado (no undefined)
+      userOrgs.length > 0 // Verificar que tenga al menos una organización
+    ) {
+      const hasAccess = userOrgs.some(
+        (org) => org && org._id === organizador._id
+      );
+
+      // Solo redirigir si definitivamente NO tiene acceso (userOrgs está cargado y no incluye esta org)
+      if (!hasAccess) {
+        console.log("Usuario no tiene acceso a la organización:", {
+          slug,
+          userOrgs: userOrgs.map((o) => ({ id: o?._id, slug: o?.slug })),
+          organizadorId: organizador._id,
+        });
+
+        // Usuario no tiene acceso a esta organización, redirigir a su primera organización
+        if (userOrgs[0]?.slug && userOrgs[0].slug !== slug) {
+          router.replace(`/org/${userOrgs[0].slug}/admin`);
+        } else {
+          router.replace("/jugador");
+        }
+        return; // Evitar renderizar el layout si no tiene acceso
+      }
+    }
+  }, [user, organizador, userOrgs, router, slug]);
 
   // STEP 2: Validar organizador existe y está activo
   useEffect(() => {
@@ -58,7 +98,12 @@ export default function OrganizadorAdminLayout({
   }, [organizador]);
 
   // LOADING STATE: Mientras carga data
-  if (user === undefined || organizador === undefined) {
+  // Para organizadores, también esperar a que carguen sus organizaciones antes de validar acceso
+  if (
+    user === undefined ||
+    organizador === undefined ||
+    (user?.role === "organizador" && userOrgs === undefined)
+  ) {
     return (
       <div className="flex items-center justify-center h-screen">
         Cargando...
@@ -77,12 +122,14 @@ export default function OrganizadorAdminLayout({
   }
 
   // Calcular iniciales del usuario
+  const displayName = user?.name || user?.email || "Usuario";
   const userInitials = user?.name
     ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
+        .slice(0, 2)
     : user?.email?.[0].toUpperCase() || "U";
 
   return (
@@ -108,7 +155,7 @@ export default function OrganizadorAdminLayout({
                 </div>
                 <h1 className="text-2xl font-bold">Panel Organizador</h1>
                 <p className="text-sm text-muted-foreground">
-                  Bienvenido, {user?.name || user?.email}
+                  Bienvenido, {displayName}
                 </p>
               </div>
 
@@ -121,7 +168,7 @@ export default function OrganizadorAdminLayout({
                         {user?.image && (
                           <AvatarImage
                             src={user.image}
-                            alt={user.name || user.email || "Usuario"}
+                            alt={displayName}
                             className="object-cover"
                           />
                         )}
@@ -134,10 +181,10 @@ export default function OrganizadorAdminLayout({
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">
-                          {user?.name || "Organizador"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
+                        {user?.name && (
+                          <p className="text-sm font-medium">{user.name}</p>
+                        )}
+                        <p className={user?.name ? "text-xs text-muted-foreground" : "text-sm font-medium"}>
                           {user?.email}
                         </p>
                       </div>

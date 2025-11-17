@@ -35,7 +35,21 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
         if (user.role === "superadmin") {
           return nextjsMiddlewareRedirect(request, "/superadmin");
         } else if (user.role === "organizador") {
-          return nextjsMiddlewareRedirect(request, "/organizador");
+          // Obtener organizaciones del usuario y redirigir a la primera
+          const userOrgs = await fetchQuery(
+            api.invitations.getUserOrganizaciones,
+            { userId: user._id },
+            { token }
+          );
+          
+          if (userOrgs && userOrgs.length > 0) {
+            const firstOrg = userOrgs[0];
+            if (firstOrg && firstOrg.slug) {
+              return nextjsMiddlewareRedirect(request, `/org/${firstOrg.slug}/admin`);
+            }
+          }
+          // Si no tiene organizaciones, redirigir a jugador
+          return nextjsMiddlewareRedirect(request, "/jugador");
         } else {
           return nextjsMiddlewareRedirect(request, "/jugador");
         }
@@ -54,6 +68,17 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
       if (user) {
         // Verificar acceso a rutas de superadmin
         if (isSuperAdminRoute(request) && user.role !== "superadmin") {
+          if (user.role === "organizador") {
+            // Obtener primera organización del usuario
+            const userOrgs = await fetchQuery(
+              api.invitations.getUserOrganizaciones,
+              { userId: user._id },
+              { token }
+            );
+            if (userOrgs && userOrgs.length > 0 && userOrgs[0]?.slug) {
+              return nextjsMiddlewareRedirect(request, `/org/${userOrgs[0].slug}/admin`);
+            }
+          }
           return nextjsMiddlewareRedirect(request, `/${user.role}`);
         }
 

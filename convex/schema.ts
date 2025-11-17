@@ -61,6 +61,7 @@ export default defineSchema({
   // Tabla de invitaciones para usuarios organizadores
   invitations: defineTable({
     email: v.string(),
+    name: v.optional(v.string()),
     organizacionId: v.id("organizadores"),
     token: v.string(),
     expiresAt: v.number(),
