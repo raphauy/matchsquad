@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
 import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "../../../../convex/_generated/api";
 import { OrganizadorActionsClient } from "./organizador-actions-client";
 
@@ -21,9 +22,10 @@ interface OrganizadoresListProps {
 export async function OrganizadoresList({
   showInactivos = false,
 }: OrganizadoresListProps) {
+  const token = await convexAuthNextjsToken();
   const organizadores = showInactivos
-    ? await fetchQuery(api.organizadores.listOrganizadoresInactivos)
-    : await fetchQuery(api.organizadores.listOrganizadores);
+    ? await fetchQuery(api.organizadores.listOrganizadoresInactivos, {}, { token })
+    : await fetchQuery(api.organizadores.listOrganizadores, {}, { token });
 
   const formatDate = (timestamp: number) => {
     return new Intl.DateTimeFormat("es-ES", {

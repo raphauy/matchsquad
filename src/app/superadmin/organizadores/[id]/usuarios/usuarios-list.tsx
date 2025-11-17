@@ -1,4 +1,5 @@
 import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import {
@@ -18,9 +19,12 @@ interface UsuariosListProps {
 }
 
 export async function UsuariosList({ organizacionId }: UsuariosListProps) {
-  const usuarios = await fetchQuery(api.invitations.getOrganizacionUsuarios, {
-    organizacionId,
-  });
+  const token = await convexAuthNextjsToken();
+  const usuarios = await fetchQuery(
+    api.invitations.getOrganizacionUsuarios,
+    { organizacionId },
+    { token }
+  );
 
   if (usuarios.length === 0) {
     return (

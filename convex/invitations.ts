@@ -426,19 +426,21 @@ export const acceptInvitation = mutation({
 
     // 5. Actualizar rol y nombre: si es jugador o no tiene rol, asignar organizador
     // Si el usuario no tiene nombre y la invitación sí, asignar el nombre de la invitación
-    const updates: { role?: "organizador"; name?: string } = {};
+    const shouldUpdateRole = !user.role || user.role === "jugador";
+    const shouldUpdateName = !user.name && invitation.name;
 
-    if (!user.role || user.role === "jugador") {
-      updates.role = "organizador";
-    }
-
-    if (!user.name && invitation.name) {
-      updates.name = invitation.name;
-    }
-
-    if (Object.keys(updates).length > 0) {
-      await ctx.db.patch(userId, updates);
-      console.log("Usuario actualizado:", { userId, updates });
+    if (shouldUpdateRole && shouldUpdateName) {
+      await ctx.db.patch(userId, {
+        role: "organizador" as const,
+        name: invitation.name,
+      });
+      console.log("Usuario actualizado: rol y nombre", { userId });
+    } else if (shouldUpdateRole) {
+      await ctx.db.patch(userId, { role: "organizador" as const });
+      console.log("Rol actualizado a organizador para usuario:", userId);
+    } else if (shouldUpdateName) {
+      await ctx.db.patch(userId, { name: invitation.name });
+      console.log("Nombre actualizado para usuario:", userId);
     }
 
     // 6. Crear asociación usuario-organización (si no existe)

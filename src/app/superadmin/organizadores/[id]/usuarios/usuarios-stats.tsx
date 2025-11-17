@@ -1,4 +1,5 @@
 import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +12,12 @@ interface UsuariosStatsProps {
 export async function UsuariosStats({
   organizacionId,
 }: UsuariosStatsProps) {
-  const stats = await fetchQuery(api.invitations.getOrganizacionStats, {
-    organizacionId,
-  });
+  const token = await convexAuthNextjsToken();
+  const stats = await fetchQuery(
+    api.invitations.getOrganizacionStats,
+    { organizacionId },
+    { token }
+  );
 
   return (
     <div className="grid gap-4 md:grid-cols-3">

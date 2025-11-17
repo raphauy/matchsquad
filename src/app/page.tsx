@@ -57,6 +57,20 @@ export default function Home() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p>Cargando...</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Si esto toma mucho tiempo, revisa la consola (F12)
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si userOrgs se está cargando para un organizador, mostrar loading
+  if (user && user.role === "organizador" && userOrgs === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p>Cargando organizaciones...</p>
         </div>
       </div>
     );

@@ -132,7 +132,7 @@ Migración del código existente:
 
 </FEATURE>
 
-<FEATURE number="3" status="WORKING-ON-FEATURE" prp-file-path="docs/PRPs/gestion-usuarios-organizador-prp.md">
+<FEATURE number="3" status="COMPLETED" prp-file-path="docs/PRPs/gestion-usuarios-organizador-prp.md">
 Gestión de usuarios con rol organizador:
 
 Implementar un sistema completo de gestión de usuarios administradores para cada Organización. El SuperAdmin podrá seleccionar cualquier Organización y gestionar los usuarios que tienen permisos para administrarla (rol "organizador"). Esta funcionalidad incluye CRUD completo de usuarios y un sistema de invitación por email para que los usuarios invitados puedan acceder y administrar la Organización.
