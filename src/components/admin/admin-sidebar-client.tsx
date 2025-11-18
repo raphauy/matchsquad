@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Settings, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Building2, ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 import {
   Sidebar,
@@ -16,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
@@ -35,11 +38,13 @@ const adminNavItems = [
     title: "Organizadores",
     href: "/superadmin/organizadores",
     icon: Building2,
+    badge: "organizadores",
   },
   {
     title: "Usuarios",
     href: "/superadmin/users",
     icon: Users,
+    badge: "users",
   },
   {
     title: "Configuración",
@@ -50,6 +55,22 @@ const adminNavItems = [
 
 export function AdminSidebarClient({ children }: AdminSidebarClientProps) {
   const pathname = usePathname();
+
+  // Fetchear counts usando Convex useQuery
+  const organizadoresCount = useQuery(api.organizadores.countOrganizadoresActivos) ?? 0;
+  const usersCount = useQuery(api.users.countAllUsers) ?? 0;
+
+  // Helper function para mapear badge type a count
+  const getBadgeCount = (badgeType: string) => {
+    switch (badgeType) {
+      case "organizadores":
+        return organizadoresCount;
+      case "users":
+        return usersCount;
+      default:
+        return 0;
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -81,9 +102,31 @@ export function AdminSidebarClient({ children }: AdminSidebarClientProps) {
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
+                      {item.badge && getBadgeCount(item.badge) > 0 && (
+                        <SidebarMenuBadge>
+                          {getBadgeCount(item.badge)}
+                        </SidebarMenuBadge>
+                      )}
                     </SidebarMenuItem>
                   );
                 })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Acceso Rápido */}
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupLabel>Acceso Rápido</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Ver como Organizador">
+                    <Link href="/org">
+                      <ExternalLink />
+                      <span>Ver como Organizador</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

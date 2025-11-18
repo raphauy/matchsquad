@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { OrganizadorSidebar } from "./organizador-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { OrganizadorSelector } from "@/components/organizador-selector/organizador-selector";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,7 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { LogOut } from "lucide-react";
+import { LogOut, Shield, Crown } from "lucide-react";
 
 export default function OrganizadorAdminLayout({
   children,
@@ -45,6 +46,23 @@ export default function OrganizadorAdminLayout({
     api.invitations.getUserOrganizaciones,
     user && user.role === "organizador" ? { userId: user._id } : "skip"
   );
+
+  // Obtener TODAS las organizaciones si es SuperAdmin
+  const allOrganizadoresSuper = useQuery(
+    api.organizadores.listOrganizadores,
+    user?.role === "superadmin" ? {} : "skip"
+  );
+
+  // Combinar organizaciones según rol y filtrar nulls
+  const allOrgs =
+    user?.role === "superadmin"
+      ? allOrganizadoresSuper
+      : userOrgs?.filter((org) => org !== null);
+
+  // Calcular si mostrar selector
+  const shouldShowSelector =
+    user?.role === "superadmin" ||
+    (user?.role === "organizador" && userOrgs && userOrgs.length > 1);
 
   // STEP 1: Validar autenticación y permisos
   useEffect(() => {
@@ -99,10 +117,12 @@ export default function OrganizadorAdminLayout({
 
   // LOADING STATE: Mientras carga data
   // Para organizadores, también esperar a que carguen sus organizaciones antes de validar acceso
+  // Para SuperAdmin, esperar a que carguen todas las organizaciones
   if (
     user === undefined ||
     organizador === undefined ||
-    (user?.role === "organizador" && userOrgs === undefined)
+    (user?.role === "organizador" && userOrgs === undefined) ||
+    (user?.role === "superadmin" && allOrganizadoresSuper === undefined)
   ) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -133,27 +153,21 @@ export default function OrganizadorAdminLayout({
     : user?.email?.[0].toUpperCase() || "U";
 
   return (
-    <OrganizadorSidebar slug={slug} organizador={organizador}>
+    <OrganizadorSidebar slug={slug} organizador={{ _id: organizador._id, nombre: organizador.nombre, logoUrl: organizador.logoUrl }}>
       <SidebarInset>
         <header className="border-b bg-background py-4">
           <div className="max-w-none lg:max-w-6xl lg:mx-auto px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  {user.role === "superadmin" && (
-                    <>
-                      <Link
-                        href="/superadmin/organizadores"
-                        className="hover:underline"
-                      >
-                        Organizadores
-                      </Link>
-                      {" / "}
-                    </>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl font-bold">Panel Organizador</h1>
+                  {shouldShowSelector && allOrgs && allOrgs.length > 0 && (
+                    <OrganizadorSelector
+                      currentSlug={slug}
+                      organizaciones={allOrgs}
+                    />
                   )}
-                  <span>{organizador.nombre}</span>
                 </div>
-                <h1 className="text-2xl font-bold">Panel Organizador</h1>
                 <p className="text-sm text-muted-foreground">
                   Bienvenido, {displayName}
                 </p>
@@ -178,18 +192,41 @@ export default function OrganizadorAdminLayout({
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
                         {user?.name && (
-                          <p className="text-sm font-medium">{user.name}</p>
+                          <p className="text-sm font-medium leading-none">{user.name}</p>
                         )}
                         <p className={user?.name ? "text-xs text-muted-foreground" : "text-sm font-medium"}>
                           {user?.email}
                         </p>
+                        {user?.role && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {user.role === "superadmin" ? (
+                              <Crown className="h-3 w-3 text-yellow-600" />
+                            ) : (
+                              <Shield className="h-3 w-3 text-blue-600" />
+                            )}
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {user.role === "superadmin" ? "Super Admin" : user.role}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    {user?.role === "superadmin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/superadmin">
+                            <Crown className="mr-2 h-4 w-4" />
+                            Panel SuperAdmin
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
                     <DropdownMenuItem
                       onClick={() =>
                         void signOut().then(() => router.push("/signin"))

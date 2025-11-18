@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Search } from "lucide-react";
 import Image from "next/image";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { LogOut } from "lucide-react";
+import { LogOut, Shield, Crown, User as UserIcon } from "lucide-react";
 
 import {
   Sidebar,
@@ -156,18 +156,54 @@ export default function JugadorLayout({
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
                         {user?.name && (
-                          <p className="text-sm font-medium">{user.name}</p>
+                          <p className="text-sm font-medium leading-none">{user.name}</p>
                         )}
                         <p className={user?.name ? "text-xs text-muted-foreground" : "text-sm font-medium"}>
                           {user?.email}
                         </p>
+                        {user?.role && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {user.role === "superadmin" ? (
+                              <Crown className="h-3 w-3 text-yellow-600" />
+                            ) : user.role === "organizador" ? (
+                              <Shield className="h-3 w-3 text-blue-600" />
+                            ) : (
+                              <UserIcon className="h-3 w-3 text-gray-600" />
+                            )}
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {user.role === "superadmin" ? "Super Admin" : user.role}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    {user?.role === "superadmin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/superadmin">
+                            <Crown className="mr-2 h-4 w-4" />
+                            Panel SuperAdmin
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {(user?.role === "organizador" || user?.role === "superadmin") && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/org">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Panel Organizador
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
                     <DropdownMenuItem
                       onClick={() => void signOut().then(() => router.push("/signin"))}
                       className="text-red-600 focus:text-red-600"

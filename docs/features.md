@@ -326,7 +326,7 @@ Relación con otras features:
 
 </FEATURE>
 
-<FEATURE number="5" status="PENDING" prp-file-path="">
+<FEATURE number="5" status="COMPLETED" prp-file-path="docs/PRPs/selector-organizador-prp.md">
 Selector de Organizador:
 
 Implementar un selector de organización que permita a usuarios con acceso a múltiples organizaciones cambiar fácilmente entre ellas. Este selector solo se muestra cuando es necesario: siempre para SuperAdmin y solo para usuarios con rol "organizador" que administren más de una organización. El selector modifica el slug en la URL para navegar entre los dashboards de diferentes organizadores.
@@ -439,4 +439,22 @@ Relación con otras features:
 - Afecta la navegación en todas las features futuras del dashboard del Organizador
 - Se integra con el layout del dashboard creado en FEATURE #2
 
+</FEATURE>
+
+<FEATURE number="6" status="COMPLETED" prp-file-path="docs/PRPs/sidebar-badges-prp.md">
+Modificar los sidebars tanto de admin como de organizador para mostrar un badge con la cantidad de elementos cuando corresponda, por ej:
+- Organizadores      3
+- Usuarios           5
+
+Ejemplo o referencia de otro proyecto: /home/raphael/ksnip_20251118-104039.png
+
+Proyecto Bond de referencia para ver cómo está hecho: /home/raphael/desarrollo/bond
+
+</FEATURE>
+
+
+<FEATURE number="7" status="WORKING-ON-FEATURE" prp-file-path="docs/PRPs/invitar-usuario-existente-prp.md">
+Modificar la invitación a administrar un Organizador:
+- actualmente pide nombre e email pero no chquequea si ya existe ese usuario (email) en la plataforma, por lo que no permite agregar un mismo usuario a más de un Organizador
+- modificar para que cuando el email ya existe que le diga eso al usuario y que le pregunte si quiere invitar a ese usuario, luego seguir el flujo normal de invitación pero sin crear un usuario nuevo
 </FEATURE>

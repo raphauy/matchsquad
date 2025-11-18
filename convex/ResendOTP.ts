@@ -18,6 +18,23 @@ export const ResendOTP = Email({
     return generateRandomString(random, alphabet, length);
   },
   async sendVerificationRequest({ identifier: email, provider, token }) {
+    // En modo desarrollo, solo logear el código en consola
+    // En desarrollo local, CONVEX_CLOUD_URL apunta a localhost
+    // En producción, existe CONVEX_DEPLOY_KEY
+    const isDev = !process.env.CONVEX_DEPLOY_KEY;
+
+    if (isDev) {
+      console.log("\n" + "=".repeat(60));
+      console.log("🔐 CÓDIGO OTP DE DESARROLLO");
+      console.log("=".repeat(60));
+      console.log(`📧 Email: ${email}`);
+      console.log(`🔢 Código: ${token}`);
+      console.log(`⏰ Expira en: 15 minutos`);
+      console.log("=".repeat(60) + "\n");
+      return; // No enviar email en desarrollo
+    }
+
+    // En producción, enviar email con Resend
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL!,

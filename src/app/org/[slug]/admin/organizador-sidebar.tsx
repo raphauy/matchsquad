@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Trophy, Settings, Users } from "lucide-react";
 import Image from "next/image";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
@@ -22,6 +26,7 @@ import {
 interface OrganizadorSidebarProps {
   slug: string;
   organizador: {
+    _id: Id<"organizadores">;
     nombre: string;
     logoUrl?: string;
   };
@@ -35,6 +40,12 @@ export function OrganizadorSidebar({
 }: OrganizadorSidebarProps) {
   const pathname = usePathname();
 
+  // Fetchear count de usuarios de esta organización
+  const usuariosCount = useQuery(
+    api.invitations.countUsuariosByOrganizacion,
+    { organizacionId: organizador._id }
+  ) ?? 0;
+
   const navItems = [
     {
       title: "Dashboard",
@@ -45,6 +56,7 @@ export function OrganizadorSidebar({
       title: "Usuarios",
       href: `/org/${slug}/admin/usuarios`,
       icon: Users,
+      badge: "usuarios",
     },
     {
       title: "Torneos",
@@ -57,6 +69,16 @@ export function OrganizadorSidebar({
       icon: Settings,
     },
   ];
+
+  // Helper function para mapear badge type a count
+  const getBadgeCount = (badgeType: string) => {
+    switch (badgeType) {
+      case "usuarios":
+        return usuariosCount;
+      default:
+        return 0;
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -98,6 +120,11 @@ export function OrganizadorSidebar({
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
+                      {item.badge && getBadgeCount(item.badge) > 0 && (
+                        <SidebarMenuBadge>
+                          {getBadgeCount(item.badge)}
+                        </SidebarMenuBadge>
+                      )}
                     </SidebarMenuItem>
                   );
                 })}

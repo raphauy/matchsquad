@@ -229,6 +229,23 @@ export const getOrganizacionStats = query({
   },
 });
 
+/**
+ * Contar usuarios organizadores asignados a una organización específica
+ */
+export const countUsuariosByOrganizacion = query({
+  args: { organizacionId: v.id("organizadores") },
+  handler: async (ctx, args) => {
+    const userOrgs = await ctx.db
+      .query("userOrganizaciones")
+      .withIndex("by_organizacion", (q) =>
+        q.eq("organizacionId", args.organizacionId)
+      )
+      .collect();
+
+    return userOrgs.length;
+  },
+});
+
 // ============================================
 // MUTATIONS
 // ============================================
@@ -269,11 +286,12 @@ export const createInvitation = mutation({
       throw new Error("No tienes permisos para enviar invitaciones");
     }
 
-    // 2. Validar email
+    // 2. Validar email y normalizar
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(args.email)) {
       throw new Error("Email inválido");
     }
+    const normalizedEmail = args.email.toLowerCase().trim();
 
     // 3. Verificar que la organización existe
     const organizacion = await ctx.db.get(args.organizacionId);
@@ -286,7 +304,7 @@ export const createInvitation = mutation({
       .query("invitations")
       .withIndex("by_email_organizacion_status", (q) =>
         q
-          .eq("email", args.email)
+          .eq("email", normalizedEmail)
           .eq("organizacionId", args.organizacionId)
           .eq("status", "pending")
       )
@@ -301,10 +319,11 @@ export const createInvitation = mutation({
     // 5. Verificar si el usuario ya existe y está asociado
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
+      .withIndex("email", (q) => q.eq("email", normalizedEmail))
       .first();
 
     if (existingUser) {
+      // Verificar si YA está asociado a esta organización
       const existingAssoc = await ctx.db
         .query("userOrganizaciones")
         .withIndex("by_user_organizacion", (q) =>
@@ -315,8 +334,12 @@ export const createInvitation = mutation({
         .first();
 
       if (existingAssoc) {
+        // ERROR: Usuario ya pertenece a la organización
         throw new Error("El usuario ya pertenece a esta organización");
       }
+
+      // Usuario existe pero NO está asociado - CONTINUAR NORMALMENTE
+      // No lanzar error, permitir crear invitación
     }
 
     // 6. Generar token y crear invitación
@@ -324,7 +347,7 @@ export const createInvitation = mutation({
     const expiresAt = getInvitationExpirationTime();
 
     const invitationId = await ctx.db.insert("invitations", {
-      email: args.email,
+      email: normalizedEmail,
       name: args.name,
       organizacionId: args.organizacionId,
       token,

@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useState, useEffect } from "react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -31,11 +32,41 @@ export function UsuarioInvitationForm({
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [debouncedEmail, setDebouncedEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const createInvitation = useMutation(api.invitations.createInvitation);
   const sendEmail = useAction(api.invitations.sendInvitationEmail);
+
+  // Query para verificar si el usuario existe
+  const existingUser = useQuery(
+    api.users.getUserByEmail,
+    debouncedEmail && debouncedEmail.includes("@")
+      ? { email: debouncedEmail }
+      : "skip"
+  );
+
+  // Debounce del email para evitar queries excesivas
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Solo actualizar si el email tiene formato mínimo
+      if (email.trim() && email.includes("@")) {
+        setDebouncedEmail(email.trim().toLowerCase());
+      } else {
+        setDebouncedEmail("");
+      }
+    }, 500); // 500ms de debounce
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  // Autocompletar nombre cuando se detecta un usuario existente
+  useEffect(() => {
+    if (existingUser?.name && !name) {
+      setName(existingUser.name);
+    }
+  }, [existingUser, name]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +95,7 @@ export function UsuarioInvitationForm({
       // Limpiar y cerrar
       setName("");
       setEmail("");
+      setDebouncedEmail("");
       setIsOpen(false);
       router.refresh();
 
@@ -96,21 +128,6 @@ export function UsuarioInvitationForm({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Juan Pérez"
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-muted-foreground">
-              Opcional. Se incluirá en el email de invitación
-            </p>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="email">
               Email <span className="text-red-500">*</span>
             </Label>
@@ -129,6 +146,33 @@ export function UsuarioInvitationForm({
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre</Label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Juan Pérez"
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Opcional. Se incluirá en el email de invitación
+            </p>
+          </div>
+
+          {/* Alert si usuario existe */}
+          {existingUser && (
+            <Alert className="border-blue-200 bg-blue-50 text-blue-900">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertTitle>Usuario existente detectado</AlertTitle>
+              <AlertDescription>
+                El email pertenece a <strong>{existingUser.name || existingUser.email}</strong>.
+                {" "}Se enviará una invitación para agregarlo a esta organización.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded text-sm border border-red-200">
               {error}
@@ -143,6 +187,7 @@ export function UsuarioInvitationForm({
                 setIsOpen(false);
                 setName("");
                 setEmail("");
+                setDebouncedEmail("");
                 setError("");
               }}
               disabled={isSubmitting}

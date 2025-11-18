@@ -217,3 +217,15 @@ export const activateOrganizador = mutation({
     return { success: true };
   },
 });
+
+// Query: Contar organizadores activos
+export const countOrganizadoresActivos = query({
+  args: {},
+  handler: async (ctx) => {
+    const organizadores = await ctx.db
+      .query("organizadores")
+      .withIndex("by_activo", (q) => q.eq("activo", true))
+      .collect();
+    return organizadores.length;
+  },
+});

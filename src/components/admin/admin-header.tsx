@@ -2,7 +2,8 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Shield, Crown } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ interface AdminHeaderProps {
     name?: string;
     email?: string;
     image?: string;
+    role?: string;
   } | null;
 }
 
@@ -70,18 +72,41 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     {user?.name && (
-                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
                     )}
                     <p className={user?.name ? "text-xs text-muted-foreground" : "text-sm font-medium"}>
                       {user?.email}
                     </p>
+                    {user?.role && (
+                      <div className="flex items-center gap-1 mt-1">
+                        {user.role === "superadmin" ? (
+                          <Crown className="h-3 w-3 text-yellow-600" />
+                        ) : (
+                          <Shield className="h-3 w-3 text-blue-600" />
+                        )}
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {user.role === "superadmin" ? "Super Admin" : user.role}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {user?.role === "superadmin" && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/superadmin">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Panel SuperAdmin
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem disabled>
                   <User className="mr-2 h-4 w-4" />
                   Perfil (Próximamente)
