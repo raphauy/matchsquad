@@ -441,20 +441,305 @@ Relación con otras features:
 
 </FEATURE>
 
-<FEATURE number="6" status="COMPLETED" prp-file-path="docs/PRPs/sidebar-badges-prp.md">
-Modificar los sidebars tanto de admin como de organizador para mostrar un badge con la cantidad de elementos cuando corresponda, por ej:
-- Organizadores      3
-- Usuarios           5
+<FEATURE number="6" status="COMPLETED" prp-file-path="docs/PRPs/gestion-categorias-organizador-prp.md">
+Gestión de Categorías por Organizador:
 
-Ejemplo o referencia de otro proyecto: /home/raphael/ksnip_20251118-104039.png
+Implementar un sistema de gestión de categorías a nivel de organizador que permita crear, editar y administrar una biblioteca de categorías reutilizables. Estas categorías estarán disponibles al momento de crear torneos, donde se seleccionarán por referencia. La gestión de torneos queda fuera del alcance de esta feature.
 
-Proyecto Bond de referencia para ver cómo está hecho: /home/raphael/desarrollo/bond
+Funcionalidades principales:
+- Crear nueva categoría con información básica y configuración
+- Editar categorías existentes
+- Listar todas las categorías del organizador con búsqueda y filtros
+- Ver detalles de una categoría
+- Desactivar categorías (soft delete con modificación de slug)
+- Acceso a plantillas predefinidas del sistema para copiar/usar como base
+
+Campos de la Categoría:
+Requeridos:
+- Nombre de la categoría (ej: "Masculino A", "Femenino Open", "Dobles Mixto B")
+- Slug único por organizador (generado automáticamente del nombre, editable)
+- Modalidad (singles, dobles masculino, dobles femenino, dobles mixto)
+
+Opcionales:
+- Descripción
+- Rango de edad mínima (opcional)
+- Rango de edad máxima (opcional)
+- Nivel requerido (opcional, ej: "Principiante", "Intermedio", "Avanzado", "Pro")
+
+Nota sobre cupos: El cupo máximo de participantes NO se define en la categoría base, sino al momento de asociar la categoría a un torneo específico.
+
+Generación de Slug:
+- El slug se genera automáticamente a partir del nombre
+- Formato: lowercase, sin espacios, sin caracteres especiales, solo letras, números y guiones
+- Ejemplos: "masculino-a", "femenino-open", "dobles-mixto-b"
+- El slug debe ser único dentro del organizador (no a nivel global de plataforma)
+- El slug se usará para Badges visuales y filtros de torneos
+
+Validaciones:
+- El nombre no puede estar vacío
+- El slug debe ser único dentro del organizador
+- La modalidad es requerida y debe ser uno de los valores permitidos
+- Si se especifica rango de edad, edad mínima <= edad máxima
+- Al editar el slug, validar que no esté en uso por otra categoría activa del mismo organizador
+
+Desactivación de Categorías:
+- Las categorías no se eliminan, solo se desactivan (soft delete)
+- Al desactivar una categoría:
+  1. Se marca como inactiva (isActive = false)
+  2. Se modifica el slug agregando "-discontinuada" al final (ej: "masculino-a-discontinuada")
+  3. Esto libera el slug original para que pueda usarse en una nueva categoría
+- Las categorías desactivadas no aparecen al crear/editar torneos
+- Las categorías desactivadas siguen visibles en torneos históricos que las referenciaban
+- Se puede filtrar la lista para ver categorías activas/inactivas/todas
+
+Relación con Torneos:
+- Al crear un torneo (feature futura), el organizador seleccionará categorías de su biblioteca
+- La relación es por REFERENCIA (no copia): el torneo apunta a la categoría del organizador
+- Esto significa que si se edita el nombre de una categoría, se reflejará en todos los torneos que la usan
+- Si el organizador necesita una variación significativa, debe crear una nueva categoría
+- Una categoría puede estar asociada a múltiples torneos
+
+Plantillas Predefinidas del Sistema:
+- El sistema incluye categorías plantilla que los organizadores pueden copiar
+- Las plantillas son solo de lectura, no se pueden editar ni eliminar
+- Al copiar una plantilla, se crea una nueva categoría en el organizador con los datos de la plantilla
+- El organizador puede luego modificar la categoría copiada según sus necesidades
+
+Plantillas incluidas:
+- "Masculino Singles" (modalidad: singles)
+- "Femenino Singles" (modalidad: singles)  
+- "Dobles Masculino" (modalidad: dobles masculino)
+- "Dobles Femenino" (modalidad: dobles femenino)
+- "Dobles Mixto" (modalidad: dobles mixto)
+- "Sub-18 Masculino" (modalidad: singles, edad máxima: 18)
+- "Sub-18 Femenino" (modalidad: singles, edad máxima: 18)
+- "Veteranos +40" (modalidad: singles, edad mínima: 40)
+- "Veteranos +50" (modalidad: singles, edad mínima: 50)
+
+Permisos y acceso:
+- Ruta del CRUD en dashboard de Organizador: /org/[slug]/admin/categorias
+- Solo usuarios con rol "organizador" pueden gestionar categorías de su organización
+- SuperAdmin puede acceder, ver, crear, editar y desactivar categorías de CUALQUIER organizador
+- SuperAdmin accede desde el dashboard del organizador específico (usando el selector de organizador)
+
+Consideraciones técnicas:
+- Usar Convex para queries y mutations
+- El slug se genera en el cliente pero se valida unicidad en el servidor
+- Implementar loading states y skeleton loaders
+- Las categorías inactivas no deben aparecer en selectors de creación de torneos
+- Índice compuesto en la base de datos: (organizadorId, slug) para búsquedas eficientes
+- Índice en (organizadorId, isActive) para filtrar categorías activas
+
+UI/UX:
+- Usar Shadcn UI para componentes
+- Tabla de categorías con columnas: Nombre, Slug/Badge, Modalidad, Edad, Nivel, Estado, Acciones
+- Filtros: por modalidad, por estado (activa/inactiva), por nivel
+- Búsqueda: por nombre o slug
+- Badge visual con el slug de la categoría (usar colores según modalidad)
+- Modal/Dialog para crear nueva categoría
+- Formulario con validación en tiempo real para el slug (disponibilidad)
+- Vista previa del Badge mientras se escribe el nombre
+- Sección separada para "Plantillas del Sistema" con botón "Copiar" en cada una
+- Confirmación antes de desactivar categorías
+- Toast notifications para feedback de acciones
+- Indicador visual de categorías inactivas (badge gris, texto tachado o similar)
+
+Colores sugeridos para Badges por modalidad:
+- Singles: Azul
+- Dobles Masculino: Verde
+- Dobles Femenino: Rosa/Magenta
+- Dobles Mixto: Morado/Violeta
+
+Navegación:
+- Agregar opción "Categorías" en el sidebar del dashboard del Organizador
+- Usar ícono apropiado (Tags o Layers de lucide-react)
+- Breadcrumbs: Dashboard > Categorías
+- Posición en sidebar: después de "Usuarios", antes de "Torneos" (placeholder)
+
+Estructura de la página:
+1. Header con título "Categorías" y botón "Nueva Categoría"
+2. Sección de Plantillas del Sistema (colapsable, inicialmente expandida si no hay categorías)
+3. Filtros y búsqueda
+4. Tabla de categorías del organizador
+5. Paginación si hay muchas categorías
+
+Modelo de datos (Convex):
+```
+categories {
+  _id: Id<"categories">
+  organizadorId: Id<"organizadores">
+  nombre: string
+  slug: string
+  modalidad: "singles" | "dobles_masculino" | "dobles_femenino" | "dobles_mixto"
+  descripcion?: string
+  edadMinima?: number
+  edadMaxima?: number
+  nivel?: "principiante" | "intermedio" | "avanzado" | "pro"
+  isActive: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+// Índices recomendados:
+// - by_organizador: ["organizadorId"]
+// - by_organizador_slug: ["organizadorId", "slug"]
+// - by_organizador_active: ["organizadorId", "isActive"]
+```
+
+Queries de Convex necesarias:
+- `getCategories(organizadorId, filters?)`: Lista categorías con filtros opcionales
+- `getCategoryById(categoryId)`: Obtiene una categoría por ID
+- `getCategoryBySlug(organizadorId, slug)`: Obtiene categoría por slug (para validación)
+- `getSystemTemplates()`: Lista las plantillas predefinidas del sistema
+
+Mutations de Convex necesarias:
+- `createCategory(data)`: Crea nueva categoría
+- `updateCategory(categoryId, data)`: Actualiza categoría existente
+- `deactivateCategory(categoryId)`: Desactiva categoría y modifica slug
+- `copyTemplateToOrganizer(templateId, organizadorId)`: Copia plantilla como nueva categoría
+
+Relación con otras features:
+- Depende de FEATURE #2 (Dashboard de Organizador) para la estructura y navegación
+- Se integra con el selector de organizador de FEATURE #5 para acceso de SuperAdmin
+- Será usada por la feature de Gestión de Torneos (futura) para seleccionar categorías
+- Las categorías aparecerán en el portal público del organizador al listar torneos
 
 </FEATURE>
 
+<FEATURE number="7" status="COMPLETED" prp-file-path="docs/PRPs/rediseno-login-ui-prp.md">
+Rediseño de UI de Login:
 
-<FEATURE number="7" status="WORKING-ON-FEATURE" prp-file-path="docs/PRPs/invitar-usuario-existente-prp.md">
-Modificar la invitación a administrar un Organizador:
-- actualmente pide nombre e email pero no chquequea si ya existe ese usuario (email) en la plataforma, por lo que no permite agregar un mismo usuario a más de un Organizador
-- modificar para que cuando el email ya existe que le diga eso al usuario y que le pregunte si quiere invitar a ese usuario, luego seguir el flujo normal de invitación pero sin crear un usuario nuevo
+Reemplazar la interfaz de login por defecto de Convex Auth con un diseño moderno y profesional basado en el bloque [login-02 de Shadcn](https://ui.shadcn.com/blocks/login#login-02). El diseño será adaptado a la identidad de MatchSquad, manteniendo la funcionalidad existente de autenticación por email con OTP.
+
+Objetivo:
+Mejorar la primera impresión de los usuarios con una pantalla de login visualmente atractiva que refleje la calidad y profesionalismo de la plataforma, sin cambiar la lógica de autenticación subyacente.
+
+Diseño Base (login-02 de Shadcn):
+- Layout de dos columnas en desktop
+- Columna izquierda: formulario de login
+- Columna derecha: imagen de portada/cover
+- En móvil: solo columna del formulario (imagen oculta)
+
+Adaptaciones para MatchSquad:
+
+1. Branding:
+   - Logo de MatchSquad en la esquina superior izquierda (o texto "MatchSquad" si no hay logo aún)
+   - Título: "Bienvenido a MatchSquad"
+   - Subtítulo: "Ingresa tu email para acceder a la plataforma"
+
+2. Formulario simplificado:
+   - Campo de email con label "Email"
+   - Placeholder: "tu@email.com"
+   - Botón principal: "Continuar con Email" o "Enviar código"
+   - NO incluir campos de contraseña (usamos OTP)
+   - NO incluir botones de login con redes sociales (Google, GitHub, etc.)
+   - NO incluir enlace "Sign up" o "Crear cuenta" (el registro es implícito al hacer login con un email nuevo)
+   - NO incluir enlace "Forgot password" (no usamos contraseñas)
+
+3. Flujo de OTP (segundo paso):
+   - Después de enviar el email, mostrar campo para ingresar código OTP
+   - Texto: "Te enviamos un código a [email]"
+   - Campo de OTP (6 dígitos)
+   - Botón: "Verificar código"
+   - Enlace: "Reenviar código" (con countdown de 60 segundos)
+   - Enlace: "Usar otro email" (volver al paso anterior)
+
+4. Imagen de portada (columna derecha):
+  - Imagen para light mode: /home/raphael/Documents/bond/PNGS/Recurso 8.png
+  - Imagen para dark mode: /home/raphael/Documents/bond/PNGS/Recurso 2.png
+  - Guardar en `/public/images/login-cover-light.jpg` y `/public/images/login-cover-dark.jpg`
+
+5. Estados del formulario:
+   - Loading: spinner en el botón mientras se envía el email/OTP
+   - Error: mensaje de error debajo del campo correspondiente
+   - Éxito: transición suave al siguiente paso o redirección
+
+Elementos a ELIMINAR del diseño original login-02:
+- Botones de login social (Google, Apple, etc.)
+- Separador "Or continue with"
+- Campo de contraseña
+- Enlace "Forgot your password?"
+- Enlace "Don't have an account? Sign up"
+- Checkbox "Remember me"
+
+Consideraciones técnicas:
+- Instalar el bloque login-02 de Shadcn como base: `npx shadcn add login-02`
+- Mantener la integración existente con Convex Auth
+- Usar los componentes de Shadcn (Button, Input, Card, Label)
+- Implementar los dos pasos (email → OTP) como estados del mismo componente o como steps
+- Responsive design: ocultar imagen en móvil (lg:block como en el original)
+- Mantener accesibilidad: labels, focus states, keyboard navigation
+
+Rutas afectadas:
+- `/login` o `/signin` (verificar ruta actual de Convex Auth)
+- Posiblemente crear layout específico para auth si no existe
+
+Archivos a crear/modificar:
+- `components/auth/login-form.tsx` - Componente del formulario adaptado
+- `app/(auth)/login/page.tsx` - Página de login con el nuevo diseño
+- Posiblemente: `components/auth/otp-form.tsx` - Componente separado para el paso de OTP
+
+UI/UX:
+- Usar Shadcn UI para todos los componentes
+- Colores: usar variables CSS de Shadcn/tema de MatchSquad
+- Transiciones suaves entre estados (email → OTP)
+- Feedback visual claro en cada acción
+- Mensajes de error en español
+- Placeholder y labels descriptivos
+
+Textos sugeridos:
+```
+Paso 1 (Email):
+- Título: "Bienvenido a MatchSquad"
+- Subtítulo: "Gestiona tus torneos de forma profesional"
+- Label: "Email"
+- Placeholder: "tu@email.com"
+- Botón: "Continuar"
+- Footer: "Al continuar, aceptas nuestros Términos de Servicio"
+
+Paso 2 (OTP):
+- Título: "Revisa tu email"
+- Subtítulo: "Enviamos un código de 6 dígitos a [email]"
+- Label: "Código de verificación"
+- Placeholder: "000000"
+- Botón: "Verificar"
+- Link 1: "Reenviar código" (disabled por 60s)
+- Link 2: "Cambiar email"
+
+Errores:
+- Email inválido: "Por favor ingresa un email válido"
+- Código incorrecto: "El código ingresado no es válido"
+- Código expirado: "El código ha expirado. Solicita uno nuevo"
+- Error genérico: "Ocurrió un error. Por favor intenta de nuevo"
+```
+
+Validaciones:
+- Email: formato válido, no vacío
+- OTP: exactamente 6 dígitos, solo números
+- Rate limiting: el backend de Convex ya maneja esto
+
+Métricas de éxito:
+- La página debe verse profesional y moderna
+- Tiempo de carga < 1 segundo
+- El flujo debe ser intuitivo sin necesidad de instrucciones
+- Compatible con todos los navegadores modernos
+
+Dependencias:
+- Esta feature NO depende de otras features del roadmap
+- Puede implementarse en paralelo con cualquier otra feature
+- Mejora la experiencia de TODOS los usuarios (jugadores, organizadores, superadmin)
+
+Relación con otras features:
+- Es independiente pero mejora la experiencia general de la plataforma
+- El login es el primer punto de contacto de usuarios con la aplicación
+- Una buena impresión inicial aumenta la retención
+
+Testing por parte del usuario:
+- Verificar flujo completo: email → OTP → acceso
+- Verificar responsive en móvil y desktop
+- Verificar estados de error
+- Verificar reenvío de código
+- Verificar cambio de email
+
 </FEATURE>
+

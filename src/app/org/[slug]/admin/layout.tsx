@@ -160,7 +160,7 @@ export default function OrganizadorAdminLayout({
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold">Panel Organizador</h1>
+                  <h1 className="text-2xl font-bold">Dashboard Organizador</h1>
                   {shouldShowSelector && allOrgs && allOrgs.length > 0 && (
                     <OrganizadorSelector
                       currentSlug={slug}

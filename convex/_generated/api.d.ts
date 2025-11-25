@@ -11,6 +11,7 @@
 import type * as ResendOTP from "../ResendOTP.js";
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
+import type * as categories from "../categories.js";
 import type * as http from "../http.js";
 import type * as invitations from "../invitations.js";
 import type * as lib_tokenUtils from "../lib/tokenUtils.js";
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   ResendOTP: typeof ResendOTP;
   admin: typeof admin;
   auth: typeof auth;
+  categories: typeof categories;
   http: typeof http;
   invitations: typeof invitations;
   "lib/tokenUtils": typeof lib_tokenUtils;

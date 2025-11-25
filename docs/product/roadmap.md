@@ -2,28 +2,28 @@
 
 ## Fase 1: Fundación Multi-Tenant
 
-1. [x] **Gestión de Organizadores para SuperAdmin** — Crear interfaz administrativa para crear/editar organizadoresy configurar información básica con slug único para URL personalizada.
+1.1 [x] **Gestión de Organizadores para SuperAdmin** — Crear interfaz administrativa para crear/editar organizadoresy configurar información básica con slug único para URL personalizada.
 
-2. [x] **Dashboard de Organizador** —  Crear interfaz administrativa de una Organización para gestionar cosas de un Organizdor, mover lo que hay en /organizador a una ruta dinámica para comenzar con el multi-tenant, esta tarea es solo para tener este panel, no hay que implementar las cosas que se gestionarán aquí. La ruta debe ser /org/[slug]
+1.2 [x] **Dashboard de Organizador** —  Crear interfaz administrativa de una Organización para gestionar cosas de un Organizdor, mover lo que hay en /organizador a una ruta dinámica para comenzar con el multi-tenant, esta tarea es solo para tener este panel, no hay que implementar las cosas que se gestionarán aquí. La ruta debe ser /org/[slug]
 
-3. [x] **Gestión de usuarios con rol organizador** —  El superadmin podría seleccionar un Organizador y gestionar sus usuarios que lo administran (rol organizador) con un CRUD de usuarios con este rol. Al crear un usuario de este tipo le deberá llegar un email de invitación para administrar la Organización.
+1.3 [x] **Gestión de usuarios con rol organizador** —  El superadmin podría seleccionar un Organizador y gestionar sus usuarios que lo administran (rol organizador) con un CRUD de usuarios con este rol. Al crear un usuario de este tipo le deberá llegar un email de invitación para administrar la Organización.
 
-4. [ ] **Gestión de usuarios con rol organizador en panel de Organizador** —  El usuario que administra una organización (organizador) podá gestionar sus usuarios que lo administran (rol organizador). Esta feature es la misma que la anterior para el superadmin pero para cada organización. Es decir, tanto el superadmin (en su dashboard) como los administradores de una organización en el dashboard de una Organización podrán gestionar usuario que administran la organización.
+1.4 [ ] **Gestión de usuarios con rol organizador en panel de Organizador** —  El usuario que administra una organización (organizador) podá gestionar sus usuarios que lo administran (rol organizador). Esta feature es la misma que la anterior para el superadmin pero para cada organización. Es decir, tanto el superadmin (en su dashboard) como los administradores de una organización en el dashboard de una Organización podrán gestionar usuario que administran la organización.
 
-5. [ ] **Selector de Organizador** —  Para superadmin y usuario "organizador" que tenga más de 1 Organizador asignado. En el 90% de los casos los usuarios con rol "organizador" administrarán 1 sola Organización por lo que este selector no debe aparecer para este caso más común. Solo debe aparecer para el admin y para los usuarios con rol administrador que tengan más de 1 Organización para administrar. El selector básicamente modifica el slug modificando la URL para acceder al Organizador deseado.
+1.5 [ ] **Selector de Organizador** —  Para superadmin y usuario "organizador" que tenga más de 1 Organizador asignado. En el 90% de los casos los usuarios con rol "organizador" administrarán 1 sola Organización por lo que este selector no debe aparecer para este caso más común. Solo debe aparecer para el admin y para los usuarios con rol administrador que tengan más de 1 Organización para administrar. El selector básicamente modifica el slug modificando la URL para acceder al Organizador deseado.
 
 
 ## Fase 2: Gestión de Torneos (para superadmin y organizador)
 
-3. [ ] **Sistema de Categorías Múltiples** — Permitir crear múltiples categorías por organizador (masculino/femenino, A/B/C) con configuración independiente de cupos, fechas y formato. Luego las categorías estarán disponibles para la configuración de cada torneo.
+2.1 [ ] **Sistema de Categorías Múltiples** — Permitir crear múltiples categorías por organizador (masculino/femenino, A/B/C) con configuración independiente de cupos, fechas y formato. Luego las categorías estarán disponibles para la configuración de cada torneo.
 
-4. [ ] **Wizard de Creación de Torneos 5 Pasos** — Desarrollar flujo guiado con validación en tiempo real, guardado automático de progreso y preview final antes de publicar el torneo. `L`
+2.2 [ ] **Wizard de Creación de Torneos 5 Pasos** — Desarrollar flujo guiado con validación en tiempo real, guardado automático de progreso y preview final antes de publicar el torneo.
 
-5. [ ] **Máquina de Estados del Torneo** — Implementar transiciones validadas entre estados (Borrador→Publicado→Inscripciones Cerradas→En Curso→Finalizado) con hooks para acciones automáticas. `M`
+2.3 [ ] **Máquina de Estados del Torneo** — Implementar transiciones validadas entre estados (Borrador→Publicado→Inscripciones Cerradas→En Curso→Finalizado) con hooks para acciones automáticas.
 
-6. [ ] **Página Pública del Torneo** — Crear vista detallada en `/org/[slug]/torneo/[id]` con información completa, contador de inscripciones, botón de inscripción prominente y compartir en redes. `S`
+2.4 [ ] **Página Pública del Torneo** — Crear vista detallada en `/org/[slug]/torneo/[id]` con información completa, contador de inscripciones, botón de inscripción prominente y compartir en redes.
 
-7. [ ] **Configuración de Reglas y Formato** — Permitir definir formato de juego (sets, games, tie-break), duración estimada de partidos y reglas especiales del torneo. `S`
+2.5 [ ] **Configuración de Reglas y Formato** — Permitir definir formato de juego (sets, games, tie-break), duración estimada de partidos y reglas especiales del torneo.
 
 
 <!-- ## Fase 3: Sistema de Inscripciones y Pagos (Semanas 5-6)

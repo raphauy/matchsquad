@@ -91,4 +91,32 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_organizacion", ["organizacionId"])
     .index("by_user_organizacion", ["userId", "organizacionId"]),
+
+  // Tabla de categorías por organizador
+  categories: defineTable({
+    organizadorId: v.id("organizadores"),
+    nombre: v.string(),
+    slug: v.string(),
+    modalidad: v.union(
+      v.literal("singles"),
+      v.literal("dobles_masculino"),
+      v.literal("dobles_femenino"),
+      v.literal("dobles_mixto")
+    ),
+    descripcion: v.optional(v.string()),
+    edadMinima: v.optional(v.number()),
+    edadMaxima: v.optional(v.number()),
+    nivel: v.optional(
+      v.union(
+        v.literal("principiante"),
+        v.literal("intermedio"),
+        v.literal("avanzado"),
+        v.literal("pro")
+      )
+    ),
+    isActive: v.boolean(),
+  })
+    .index("by_organizador", ["organizadorId"])
+    .index("by_organizador_slug", ["organizadorId", "slug"])
+    .index("by_organizador_active", ["organizadorId", "isActive"]),
 });

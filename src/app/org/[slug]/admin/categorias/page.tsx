@@ -13,17 +13,29 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { UsuariosList } from "./usuarios-list";
-import { UsuariosSkeleton } from "./usuarios-skeleton";
-import { UsuariosStats } from "./usuarios-stats";
-import { UsuarioInvitationForm } from "./usuario-invitation-form";
+import { CategoriasList } from "./categorias-list";
+import { CategoriasSkeleton } from "./categorias-skeleton";
+import { CategoriasStats } from "./categorias-stats";
+import { CategoriasFilters } from "./categorias-filters";
+import { SystemTemplatesSection } from "./system-templates-section";
+import { NuevaCategoriaButton } from "./nueva-categoria-button";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{
+    search?: string;
+    modalidad?: string;
+    estado?: string;
+    nivel?: string;
+  }>;
 }
 
-export default async function UsuariosPage({ params }: PageProps) {
+export default async function CategoriasPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
+  const searchParamsResolved = await searchParams;
 
   // Obtener el token de autenticación
   const token = await convexAuthNextjsToken();
@@ -64,7 +76,8 @@ export default async function UsuariosPage({ params }: PageProps) {
               <div className="text-center space-y-4">
                 <h2 className="text-2xl font-bold">Acceso denegado</h2>
                 <p className="text-muted-foreground">
-                  No tienes permisos para gestionar usuarios de esta organización.
+                  No tienes permisos para gestionar categorías de esta
+                  organización.
                 </p>
                 <Button asChild>
                   <Link href={`/org/${slug}/admin`}>
@@ -80,37 +93,70 @@ export default async function UsuariosPage({ params }: PageProps) {
     }
   }
 
+  // Preparar filtros para la lista
+  const filters = {
+    searchTerm: searchParamsResolved.search,
+    modalidad:
+      searchParamsResolved.modalidad &&
+      searchParamsResolved.modalidad !== "all"
+        ? (searchParamsResolved.modalidad as
+            | "singles"
+            | "dobles_masculino"
+            | "dobles_femenino"
+            | "dobles_mixto")
+        : undefined,
+    isActive:
+      searchParamsResolved.estado && searchParamsResolved.estado !== "all"
+        ? searchParamsResolved.estado === "true"
+        : undefined,
+    nivel:
+      searchParamsResolved.nivel && searchParamsResolved.nivel !== "all"
+        ? (searchParamsResolved.nivel as
+            | "principiante"
+            | "intermedio"
+            | "avanzado"
+            | "pro")
+        : undefined,
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Usuarios Administradores
-            </h2>
+            <h2 className="text-3xl font-bold tracking-tight">Categorías</h2>
             <p className="text-muted-foreground">
-              Gestiona quién puede administrar {organizador.nombre}
+              Gestiona las categorías disponibles para tus torneos
             </p>
           </div>
         </div>
-        <UsuarioInvitationForm organizacionId={organizador._id} />
+        <NuevaCategoriaButton organizadorId={organizador._id} />
       </div>
 
       {/* Estadísticas */}
-      <UsuariosStats organizacionId={organizador._id} />
+      <CategoriasStats organizadorId={organizador._id} />
 
-      {/* Lista de usuarios */}
+      {/* Plantillas del Sistema */}
+      <SystemTemplatesSection organizadorId={organizador._id} />
+
+      {/* Filtros */}
+      <CategoriasFilters />
+
+      {/* Lista de categorías */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Usuarios</CardTitle>
+          <CardTitle>Lista de Categorías</CardTitle>
           <CardDescription>
-            Usuarios con acceso al dashboard de administración
+            Categorías creadas para {organizador.nombre}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<UsuariosSkeleton />}>
-            <UsuariosList organizacionId={organizador._id} />
+          <Suspense fallback={<CategoriasSkeleton />}>
+            <CategoriasList
+              organizadorId={organizador._id}
+              filters={filters}
+            />
           </Suspense>
         </CardContent>
       </Card>

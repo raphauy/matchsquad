@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Trophy, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Trophy, Settings, Users, Tags } from "lucide-react";
 import Image from "next/image";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
@@ -46,6 +46,12 @@ export function OrganizadorSidebar({
     { organizacionId: organizador._id }
   ) ?? 0;
 
+  // Fetchear count de categorías activas de esta organización
+  const categoriasCount = useQuery(
+    api.categories.countCategoriesByOrganizador,
+    { organizadorId: organizador._id }
+  ) ?? 0;
+
   const navItems = [
     {
       title: "Dashboard",
@@ -57,6 +63,12 @@ export function OrganizadorSidebar({
       href: `/org/${slug}/admin/usuarios`,
       icon: Users,
       badge: "usuarios",
+    },
+    {
+      title: "Categorías",
+      href: `/org/${slug}/admin/categorias`,
+      icon: Tags,
+      badge: "categorias",
     },
     {
       title: "Torneos",
@@ -75,6 +87,8 @@ export function OrganizadorSidebar({
     switch (badgeType) {
       case "usuarios":
         return usuariosCount;
+      case "categorias":
+        return categoriasCount;
       default:
         return 0;
     }
