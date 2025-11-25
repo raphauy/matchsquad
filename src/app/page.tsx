@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Loader } from "lucide-react";
 
 export default function Home() {
   const user = useQuery(api.users.getCurrentUser);
@@ -56,10 +57,7 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p>Cargando...</p>
-          <p className="text-xs text-gray-500 mt-2">
-            Si esto toma mucho tiempo, revisa la consola (F12)
-          </p>
+          <Loader className="h-8 w-8 animate-spin mx-auto" />
         </div>
       </div>
     );
@@ -70,7 +68,7 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p>Cargando organizaciones...</p>
+          <Loader className="h-8 w-8 animate-spin mx-auto" />
         </div>
       </div>
     );

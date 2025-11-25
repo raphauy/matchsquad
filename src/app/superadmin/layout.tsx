@@ -6,6 +6,7 @@ import { AdminSidebarClient } from "@/components/admin/admin-sidebar-client";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Loader } from "lucide-react";
 
 export default function SuperAdminLayout({
   children,
@@ -22,7 +23,11 @@ export default function SuperAdminLayout({
   }, [user, router]);
 
   if (user === undefined) {
-    return <div className="flex items-center justify-center h-screen">Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   if (!user || user.role !== "superadmin") {

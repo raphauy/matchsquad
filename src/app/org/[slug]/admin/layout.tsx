@@ -21,7 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { LogOut, Shield, Crown } from "lucide-react";
+import { LogOut, Shield, Crown, Loader } from "lucide-react";
 
 export default function OrganizadorAdminLayout({
   children,
@@ -126,7 +126,7 @@ export default function OrganizadorAdminLayout({
   ) {
     return (
       <div className="flex items-center justify-center h-screen">
-        Cargando...
+        <Loader className="h-8 w-8 animate-spin" />
       </div>
     );
   }

@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Search } from "lucide-react";
 import Image from "next/image";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { LogOut, Shield, Crown, User as UserIcon } from "lucide-react";
+import { LogOut, Shield, Crown, User as UserIcon, Loader } from "lucide-react";
 
 import {
   Sidebar,
@@ -68,7 +68,11 @@ export default function JugadorLayout({
   }, [user, router]);
 
   if (user === undefined) {
-    return <div className="flex items-center justify-center h-screen">Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   if (!user) {
