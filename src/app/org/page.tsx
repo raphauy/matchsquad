@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function OrgRedirectPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useConvexAuth();
   const user = useQuery(api.users.getCurrentUser);
 
   // Obtener organizaciones según el rol
@@ -21,10 +23,19 @@ export default function OrgRedirectPage() {
   );
 
   useEffect(() => {
-    // Esperar a que carguen los datos
+    // Esperar a que termine de cargar el estado de autenticación
+    if (isLoading) return;
+    
+    // Si no está autenticado, redirigir a signin
+    if (!isAuthenticated) {
+      router.replace("/signin");
+      return;
+    }
+
+    // Esperar a que cargue el usuario
     if (user === undefined) return;
 
-    // Si no está autenticado, redirigir a signin
+    // Si el usuario es null (error), redirigir a signin
     if (!user) {
       router.replace("/signin");
       return;
@@ -34,32 +45,39 @@ export default function OrgRedirectPage() {
     let firstOrg = null;
 
     if (user.role === "superadmin") {
-      // SuperAdmin: primera organización activa de la lista
-      if (allOrganizadores !== undefined && allOrganizadores.length > 0) {
+      // SuperAdmin: esperar a que cargue la lista de organizadores
+      if (allOrganizadores === undefined) return;
+      
+      // Si hay organizadores, usar el primero
+      if (allOrganizadores.length > 0) {
         firstOrg = allOrganizadores[0];
       }
     } else if (user.role === "organizador") {
-      // Organizador: su primera organización
-      if (userOrgs !== undefined && userOrgs.length > 0) {
+      // Organizador: esperar a que cargue sus organizaciones
+      if (userOrgs === undefined) return;
+      
+      // Si tiene organizaciones, usar la primera
+      if (userOrgs.length > 0) {
         firstOrg = userOrgs[0];
       }
+    } else {
+      // Jugador u otro rol: redirigir a jugador
+      router.replace("/jugador");
+      return;
     }
 
     // Si encontró una organización, redirigir
     if (firstOrg && firstOrg.slug) {
       router.replace(`/org/${firstOrg.slug}/admin`);
-    } else if (
-      (user.role === "superadmin" && allOrganizadores !== undefined) ||
-      (user.role === "organizador" && userOrgs !== undefined)
-    ) {
-      // Si ya cargó y no tiene organizaciones, redirigir al dashboard correspondiente
+    } else {
+      // No tiene organizaciones, redirigir al dashboard correspondiente
       if (user.role === "superadmin") {
         router.replace("/superadmin");
       } else {
         router.replace("/jugador");
       }
     }
-  }, [user, userOrgs, allOrganizadores, router]);
+  }, [isLoading, isAuthenticated, user, userOrgs, allOrganizadores, router]);
 
   // Mostrar loading mientras redirecciona
   return (
