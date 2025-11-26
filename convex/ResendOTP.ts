@@ -23,6 +23,11 @@ export const ResendOTP = Email({
     // En producción, existe CONVEX_DEPLOY_KEY
     const isDev = !process.env.CONVEX_DEPLOY_KEY;
 
+    console.log("[ResendOTP] Iniciando envío de OTP");
+    console.log("[ResendOTP] Email destino:", email);
+    console.log("[ResendOTP] isDev:", isDev);
+    console.log("[ResendOTP] CONVEX_DEPLOY_KEY existe:", !!process.env.CONVEX_DEPLOY_KEY);
+
     if (isDev) {
       console.log("\n" + "=".repeat(60));
       console.log("🔐 CÓDIGO OTP DE DESARROLLO");
@@ -34,10 +39,28 @@ export const ResendOTP = Email({
       return; // No enviar email en desarrollo
     }
 
+    // Validar variables de entorno en producción
+    const apiKey = provider.apiKey || process.env.AUTH_RESEND_KEY;
+    const fromEmail = process.env.RESEND_FROM_EMAIL;
+
+    console.log("[ResendOTP] AUTH_RESEND_KEY existe:", !!apiKey);
+    console.log("[ResendOTP] RESEND_FROM_EMAIL:", fromEmail);
+
+    if (!apiKey) {
+      console.error("[ResendOTP] ERROR: AUTH_RESEND_KEY no está configurada en Convex Dashboard");
+      throw new Error("AUTH_RESEND_KEY no está configurada en Convex Dashboard");
+    }
+
+    if (!fromEmail) {
+      console.error("[ResendOTP] ERROR: RESEND_FROM_EMAIL no está configurada en Convex Dashboard");
+      throw new Error("RESEND_FROM_EMAIL no está configurada en Convex Dashboard");
+    }
+
     // En producción, enviar email con Resend
-    const resend = new ResendAPI(provider.apiKey);
-    const { error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+    console.log("[ResendOTP] Enviando email con Resend...");
+    const resend = new ResendAPI(apiKey);
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
       to: [email],
       subject: `Tu código de verificación - MatchSquad`,
       html: `
@@ -60,7 +83,10 @@ export const ResendOTP = Email({
     });
 
     if (error) {
+      console.error("[ResendOTP] Error de Resend:", JSON.stringify(error));
       throw new Error(JSON.stringify(error));
     }
+
+    console.log("[ResendOTP] Email enviado exitosamente. ID:", data?.id);
   },
 });

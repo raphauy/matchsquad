@@ -24,6 +24,9 @@ export default function SignIn() {
   const emailParam = searchParams.get("email");
   const tokenParam = searchParams.get("token");
   
+  // Verificar si el usuario ya está autenticado
+  const user = useQuery(api.users.getCurrentUser);
+  
   // Si viene un token directamente, redirigir a accept-invitation
   useEffect(() => {
     if (tokenParam && !returnUrl) {
@@ -31,6 +34,18 @@ export default function SignIn() {
       return;
     }
   }, [tokenParam, returnUrl, router]);
+  
+  // Redirigir si el usuario ya está autenticado
+  useEffect(() => {
+    if (user) {
+      // Usuario autenticado, redirigir a returnUrl o home
+      if (returnUrl) {
+        router.replace(returnUrl);
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [user, returnUrl, router]);
 
   // Si viene token pero también returnUrl, obtener email del token
   const verification = useQuery(
@@ -43,9 +58,6 @@ export default function SignIn() {
     ? verification.invitation.email 
     : null;
   const emailFromUrl = emailParam || emailFromToken || "";
-  
-  // Debug: verificar parámetros
-  console.log("SignIn - emailParam:", emailParam, "returnUrl:", returnUrl, "tokenParam:", tokenParam, "emailFromToken:", emailFromToken);
   
   // Precargar email si viene de invitación, pero mantener step inicial
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
@@ -154,12 +166,11 @@ export default function SignIn() {
                     
                     void signIn("resend-otp", formData)
                       .then(() => {
-                        // Redirigir a returnUrl si existe, sino a home
-                        if (returnUrl) {
-                          router.push(returnUrl);
-                        } else {
-                          router.push("/");
-                        }
+                        // El login fue exitoso, Convex Auth actualizará el estado
+                        // y el useEffect de arriba se encargará de redirigir
+                        // cuando getCurrentUser retorne el usuario autenticado.
+                        // Mantenemos loading en true para mostrar el spinner
+                        // hasta que el redirect ocurra.
                       })
                       .catch((error) => {
                         setError(error.message);
