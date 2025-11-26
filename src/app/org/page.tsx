@@ -23,20 +23,36 @@ export default function OrgRedirectPage() {
   );
 
   useEffect(() => {
+    console.log("[/org] Debug:", {
+      isLoading,
+      isAuthenticated,
+      user: user ? { role: user.role, id: user._id } : user,
+      allOrganizadores: allOrganizadores === undefined ? "undefined" : `array(${allOrganizadores?.length})`,
+      userOrgs: userOrgs === undefined ? "undefined" : `array(${userOrgs?.length})`,
+    });
+
     // Esperar a que termine de cargar el estado de autenticación
-    if (isLoading) return;
+    if (isLoading) {
+      console.log("[/org] Esperando isLoading...");
+      return;
+    }
     
     // Si no está autenticado, redirigir a signin
     if (!isAuthenticated) {
+      console.log("[/org] No autenticado, redirigiendo a /signin");
       router.replace("/signin");
       return;
     }
 
     // Esperar a que cargue el usuario
-    if (user === undefined) return;
+    if (user === undefined) {
+      console.log("[/org] Esperando user...");
+      return;
+    }
 
     // Si el usuario es null (error), redirigir a signin
     if (!user) {
+      console.log("[/org] User es null, redirigiendo a /signin");
       router.replace("/signin");
       return;
     }
@@ -46,15 +62,24 @@ export default function OrgRedirectPage() {
 
     if (user.role === "superadmin") {
       // SuperAdmin: esperar a que cargue la lista de organizadores
-      if (allOrganizadores === undefined) return;
+      if (allOrganizadores === undefined) {
+        console.log("[/org] Superadmin: esperando allOrganizadores...");
+        return;
+      }
+      
+      console.log("[/org] Superadmin: allOrganizadores cargado:", allOrganizadores);
       
       // Si hay organizadores, usar el primero
       if (allOrganizadores.length > 0) {
         firstOrg = allOrganizadores[0];
+        console.log("[/org] Superadmin: usando primer org:", firstOrg);
       }
     } else if (user.role === "organizador") {
       // Organizador: esperar a que cargue sus organizaciones
-      if (userOrgs === undefined) return;
+      if (userOrgs === undefined) {
+        console.log("[/org] Organizador: esperando userOrgs...");
+        return;
+      }
       
       // Si tiene organizaciones, usar la primera
       if (userOrgs.length > 0) {
@@ -62,15 +87,18 @@ export default function OrgRedirectPage() {
       }
     } else {
       // Jugador u otro rol: redirigir a jugador
+      console.log("[/org] Rol no válido para /org:", user.role);
       router.replace("/jugador");
       return;
     }
 
     // Si encontró una organización, redirigir
     if (firstOrg && firstOrg.slug) {
+      console.log("[/org] Redirigiendo a:", `/org/${firstOrg.slug}/admin`);
       router.replace(`/org/${firstOrg.slug}/admin`);
     } else {
       // No tiene organizaciones, redirigir al dashboard correspondiente
+      console.log("[/org] No hay organizaciones, redirigiendo según rol");
       if (user.role === "superadmin") {
         router.replace("/superadmin");
       } else {
