@@ -18,15 +18,10 @@ export const ResendOTP = Email({
     return generateRandomString(random, alphabet, length);
   },
   async sendVerificationRequest({ identifier: email, provider, token }) {
-    // En modo desarrollo, solo logear el código en consola
-    // En desarrollo local, CONVEX_CLOUD_URL apunta a localhost
-    // En producción, existe CONVEX_DEPLOY_KEY
-    const isDev = !process.env.CONVEX_DEPLOY_KEY;
-
-    console.log("[ResendOTP] Iniciando envío de OTP");
-    console.log("[ResendOTP] Email destino:", email);
-    console.log("[ResendOTP] isDev:", isDev);
-    console.log("[ResendOTP] CONVEX_DEPLOY_KEY existe:", !!process.env.CONVEX_DEPLOY_KEY);
+    // Detectar modo desarrollo usando CONVEX_ENV:
+    // - En desarrollo local: CONVEX_ENV=development (en .env.local)
+    // - En producción: CONVEX_ENV=production (en Convex Dashboard)
+    const isDev = process.env.CONVEX_ENV !== "production";
 
     if (isDev) {
       console.log("\n" + "=".repeat(60));
@@ -39,12 +34,9 @@ export const ResendOTP = Email({
       return; // No enviar email en desarrollo
     }
 
-    // Validar variables de entorno en producción
+    // En producción, validar y enviar email con Resend
     const apiKey = provider.apiKey || process.env.AUTH_RESEND_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL;
-
-    console.log("[ResendOTP] AUTH_RESEND_KEY existe:", !!apiKey);
-    console.log("[ResendOTP] RESEND_FROM_EMAIL:", fromEmail);
 
     if (!apiKey) {
       console.error("[ResendOTP] ERROR: AUTH_RESEND_KEY no está configurada en Convex Dashboard");
@@ -56,8 +48,8 @@ export const ResendOTP = Email({
       throw new Error("RESEND_FROM_EMAIL no está configurada en Convex Dashboard");
     }
 
-    // En producción, enviar email con Resend
-    console.log("[ResendOTP] Enviando email con Resend...");
+    // Enviar email con Resend
+    console.log("[ResendOTP] Enviando email a:", email);
     const resend = new ResendAPI(apiKey);
     const { data, error } = await resend.emails.send({
       from: fromEmail,
