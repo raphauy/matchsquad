@@ -137,11 +137,21 @@ export default function SignIn() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    
+                    // Validar que el código tenga 6 dígitos
+                    if (otpCode.length !== 6) {
+                      setError("Por favor ingresa el código completo de 6 dígitos");
+                      return;
+                    }
+                    
                     setLoading(true);
                     setError(null);
-                    const formData = new FormData(e.target as HTMLFormElement);
-                    // Agregar el código OTP al formData
+                    
+                    // Crear FormData manualmente para asegurar que tenga los valores correctos
+                    const formData = new FormData();
+                    formData.set("email", step.email);
                     formData.set("code", otpCode);
+                    
                     void signIn("resend-otp", formData)
                       .then(() => {
                         // Redirigir a returnUrl si existe, sino a home
@@ -180,9 +190,6 @@ export default function SignIn() {
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
-                    {/* Input oculto para el formulario */}
-                    <input name="code" value={otpCode} type="hidden" />
-                    <input name="email" value={step.email} type="hidden" />
                   </div>
 
                   <div className="w-full">
