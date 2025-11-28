@@ -200,8 +200,8 @@ export const updateOrganizador = mutation({
   },
 });
 
-// Mutation: Soft delete
-export const deleteOrganizador = mutation({
+// Mutation: Desactivar organizador (soft delete)
+export const deactivateOrganizador = mutation({
   args: { id: v.id("organizadores") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { activo: false });
@@ -227,5 +227,62 @@ export const countOrganizadoresActivos = query({
       .withIndex("by_activo", (q) => q.eq("activo", true))
       .collect();
     return organizadores.length;
+  },
+});
+
+// Mutation: Eliminar organizador (solo si no tiene relaciones)
+export const deleteOrganizador = mutation({
+  args: { id: v.id("organizadores") },
+  handler: async (ctx, args) => {
+    const organizador = await ctx.db.get(args.id);
+    if (!organizador) {
+      return {
+        success: false,
+        error: "Organizador no encontrado"
+      };
+    }
+
+    // Verificar si tiene categorías
+    const categorias = await ctx.db
+      .query("categories")
+      .withIndex("by_organizador", (q) => q.eq("organizadorId", args.id))
+      .collect();
+
+    if (categorias.length > 0) {
+      return {
+        success: false,
+        error: `No se puede eliminar el organizador porque tiene ${categorias.length} categoría(s) asociada(s). Elimina primero las categorías.`
+      };
+    }
+
+    // Verificar si tiene usuarios asignados (invitaciones)
+    const invitaciones = await ctx.db
+      .query("invitations")
+      .withIndex("by_organizacion", (q) => q.eq("organizacionId", args.id))
+      .collect();
+
+    if (invitaciones.length > 0) {
+      return {
+        success: false,
+        error: `No se puede eliminar el organizador porque tiene ${invitaciones.length} usuario(s) asignado(s). Elimina primero las invitaciones.`
+      };
+    }
+
+    // TODO: Cuando se implementen torneos, agregar verificación aquí
+    // const torneos = await ctx.db
+    //   .query("torneos")
+    //   .withIndex("by_organizador", (q) => q.eq("organizadorId", args.id))
+    //   .collect();
+    // if (torneos.length > 0) {
+    //   return {
+    //     success: false,
+    //     error: `No se puede eliminar porque tiene ${torneos.length} torneo(s)`
+    //   };
+    // }
+
+    // Si no tiene relaciones, eliminar
+    await ctx.db.delete(args.id);
+
+    return { success: true };
   },
 });

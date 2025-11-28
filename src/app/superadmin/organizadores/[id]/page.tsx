@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Users,
 } from "lucide-react";
+import { DeleteOrganizadorButton } from "./delete-organizador-button";
 
 interface PageProps {
   params: Promise<{ id: Id<"organizadores"> }>;
@@ -75,12 +76,18 @@ export default async function OrganizadorDetallesPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-        <Button asChild>
-          <Link href={`/superadmin/organizadores/${organizador._id}/edit`}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild size="sm">
+            <Link href={`/superadmin/organizadores/${organizador._id}/edit`}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar
+            </Link>
+          </Button>
+          <DeleteOrganizadorButton
+            organizadorId={organizador._id}
+            organizadorNombre={organizador.nombre}
+          />
+        </div>
       </div>
 
       {/* Grid de información */}
