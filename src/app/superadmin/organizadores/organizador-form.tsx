@@ -32,6 +32,7 @@ interface OrganizadorFormProps {
 export function OrganizadorForm({ organizadorId, mode }: OrganizadorFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Form state
   const [nombre, setNombre] = useState("");
@@ -87,7 +88,7 @@ export function OrganizadorForm({ organizadorId, mode }: OrganizadorFormProps) {
   const debouncedSlug = useDebounce(slug, 500);
   const slugCheck = useQuery(
     api.organizadores.checkSlugAvailability,
-    debouncedSlug
+    debouncedSlug && !isSubmitting && !submitSuccess
       ? {
           slug: debouncedSlug,
           excludeId: mode === "edit" ? organizadorId : undefined,
@@ -109,8 +110,11 @@ export function OrganizadorForm({ organizadorId, mode }: OrganizadorFormProps) {
       return;
     }
 
+    // Establecer isSubmitting ANTES de hacer cualquier cosa
+    // para desactivar la query de validación del slug
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
 
       const data = {
         nombre,
@@ -137,6 +141,9 @@ export function OrganizadorForm({ organizadorId, mode }: OrganizadorFormProps) {
           ...data,
         });
       }
+
+      // Marcar como exitoso para prevenir re-validación
+      setSubmitSuccess(true);
 
       // TODO: Toast de éxito
       router.push("/superadmin/organizadores");
@@ -200,7 +207,7 @@ export function OrganizadorForm({ organizadorId, mode }: OrganizadorFormProps) {
               Vista previa: <code>/org/{slug}</code>
             </p>
           )}
-          {debouncedSlug && slugCheck !== undefined && (
+          {debouncedSlug && slugCheck !== undefined && !isSubmitting && !submitSuccess && (
             <p
               className={`text-sm ${
                 slugCheck.available ? "text-green-600" : "text-red-600"

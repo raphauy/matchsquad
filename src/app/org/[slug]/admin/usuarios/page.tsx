@@ -1,22 +1,12 @@
-import { Suspense } from "react";
 import { fetchQuery } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "../../../../../../convex/_generated/api";
 import { notFound, redirect } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { UsuariosList } from "./usuarios-list";
-import { UsuariosSkeleton } from "./usuarios-skeleton";
-import { UsuariosStats } from "./usuarios-stats";
-import { UsuarioInvitationForm } from "./usuario-invitation-form";
+import { UsuariosContent } from "./usuarios-content";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -81,40 +71,10 @@ export default async function UsuariosPage({ params }: PageProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Usuarios Administradores
-            </h2>
-            <p className="text-muted-foreground">
-              Gestiona quién puede administrar {organizador.nombre}
-            </p>
-          </div>
-        </div>
-        <UsuarioInvitationForm organizacionId={organizador._id} />
-      </div>
-
-      {/* Estadísticas */}
-      <UsuariosStats organizacionId={organizador._id} />
-
-      {/* Lista de usuarios */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuarios</CardTitle>
-          <CardDescription>
-            Usuarios con acceso al dashboard de administración
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<UsuariosSkeleton />}>
-            <UsuariosList organizacionId={organizador._id} />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </div>
+    <UsuariosContent
+      organizacionId={organizador._id}
+      organizacionNombre={organizador.nombre}
+    />
   );
 }
 

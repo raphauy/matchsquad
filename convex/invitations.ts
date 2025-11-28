@@ -6,6 +6,21 @@ import { Resend as ResendAPI } from "resend";
 import { api } from "./_generated/api";
 
 // ============================================
+// HELPERS
+// ============================================
+
+/**
+ * Obtener la URL base de la aplicación
+ * Usa VERCEL_PROJECT_PRODUCTION_URL en producción, sino localhost para desarrollo
+ */
+function getBaseUrl(): string {
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
+// ============================================
 // QUERIES
 // ============================================
 
@@ -595,8 +610,7 @@ export const sendInvitationEmail = action({
     }
 
     // Construir link de invitación
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const invitationLink = `${baseUrl}/accept-invitation?token=${invitation.token}`;
 
     // Fecha de expiración formateada
@@ -702,8 +716,7 @@ export const resendInvitationEmail = action({
     }
 
     // Construir link de invitación
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const invitationLink = `${baseUrl}/accept-invitation?token=${invitation.token}`;
 
     // Fecha de expiración formateada
